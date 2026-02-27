@@ -10,7 +10,7 @@ load_dotenv()
 endpoint = os.getenv("endpoint") 
 key = os.getenv("api_key")
 
-df=pd.read_csv('../ml/data/jobs_preprocessed.csv').head()
+df=pd.read_csv('ml/data/jobs_preprocessed.csv').head(100)
 
 descriptions=df['Job Description'].tolist()
 
@@ -56,5 +56,5 @@ def extract_skills(descriptions: list[str]) -> list[list[str]]:
 
     print(f"Descriptions: {len(descriptions)} | All skills: {len(all_skills)}")  # ← ici
     df["extracted_skills"] = all_skills
-    df.to_csv('../ml/data/clean_jobs_with_skills.csv', index=False)
+    df.to_csv('ml/data/clean_jobs_with_skills.csv', index=False)
 extract_skills(descriptions)

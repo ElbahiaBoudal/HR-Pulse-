@@ -1,5 +1,6 @@
 import os
 import pandas as pd
+import numpy as np  # <--- Ajouté pour gérer les NaN
 from sqlalchemy import create_engine, text
 from dotenv import load_dotenv
 
@@ -13,13 +14,18 @@ if not DB_URL:
     raise ValueError("La variable DATABASE_URL n'est pas définie dans .env")
 
 # Créer le moteur SQLAlchemy
-engine = create_engine(DB_URL, fast_executemany=True)  # fast_executemany pour améliorer les performances
+engine = create_engine(DB_URL, fast_executemany=True)
 
 # Lire le CSV
 df = pd.read_csv('ml/data/clean_jobs_with_skills.csv')
 
+# --- NETTOYAGE DES DONNÉES ---
+# Remplace les NaN (flottants invalides pour SQL) par None (NULL SQL)
+df = df.replace({np.nan: None})
+# -----------------------------
+
 # Créer la table si elle n'existe pas
-with engine.begin() as conn:  # begin() pour autocommit
+with engine.begin() as conn:
     conn.execute(text("""
     IF NOT EXISTS (
         SELECT * FROM sysobjects WHERE name='jobs' AND xtype='U'
