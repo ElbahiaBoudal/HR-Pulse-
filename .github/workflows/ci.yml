@@ -1,0 +1,33 @@
+name: CI Quality & Docker
+
+on: [push, pull_request]
+
+jobs:
+  check-quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      
+      # Job 1 : Linting avec Ruff
+      - name: Lint with Ruff
+        run: uv run ruff check .
+
+      # Job 2 : Unit Tests avec Pytest
+      - name: Run Pytest
+        run: |
+          uv sync --frozen
+          uv run pytest
+
+  # Job 3 : Build Docker
+  build-docker:
+    needs: check-quality
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build Backend Image
+        run: docker build -t hr-pulse-backend:${{ github.sha }} ./backend
+      - name: Build Frontend Image
+        run: docker build -t hr-pulse-frontend:${{ github.sha }} ./frontend
