@@ -7,27 +7,33 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v5
+      
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
         with:
           enable-cache: true
-      
-      # Job 1 : Linting avec Ruff
+
+      # IMPORTANT : Installer les dépendances AVANT de lancer le lint ou les tests
+      - name: Install dependencies
+        run: uv sync --frozen
+
+      # Job 1 : Linting avec Ruff (Utilise maintenant l'env synchronisé)
       - name: Lint with Ruff
         run: uv run ruff check .
 
       # Job 2 : Unit Tests avec Pytest
       - name: Run Pytest
-        run: |
-          uv sync --frozen
-          uv run pytest
+        run: uv run pytest
 
-  # Job 3 : Build Docker
+  # Job 3 : Build Docker (Phase 5 & 7)
   build-docker:
-    needs: check-quality
+    needs: check-quality # Ne se lance que si la qualité est validée
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      
       - name: Build Backend Image
         run: docker build -t hr-pulse-backend:${{ github.sha }} ./backend
+        
       - name: Build Frontend Image
         run: docker build -t hr-pulse-frontend:${{ github.sha }} ./frontend
