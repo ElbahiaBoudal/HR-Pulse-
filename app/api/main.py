@@ -12,10 +12,55 @@ from app.schemas.users import UserRegistre  # Import du schéma Pydantic
 from app.authentification.security import hash_password, verify_password
 from app.authentification.auth import create_access_token,verify_token
 from app.schemas.predection import SalaryPrediction,SalaryFeatures
+from fastapi.middleware.cors import CORSMiddleware
+
+# OpenTelemetry Imports
+from opentelemetry import trace
+from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.resources import Resource
+from opentelemetry.sdk.trace.export import BatchSpanProcessor
+from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
+
+from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
+from opentelemetry.instrumentation.sqlalchemy import SQLAlchemyInstrumentor
+import os
 
 Base.metadata.create_all(bind=engine)
 app = FastAPI(title="HR-Pulse API")
 
+# -------------------------
+# OpenTelemetry Configuration
+# -------------------------
+
+resource = Resource.create({
+    "service.name": "hr-pulse-backend"
+})
+
+provider = TracerProvider(resource=resource)
+trace.set_tracer_provider(provider)
+
+
+
+otlp_exporter = OTLPSpanExporter(
+    endpoint=os.getenv("OTEL_EXPORTER_OTLP_ENDPOINT"),
+    insecure=True
+)
+
+provider.add_span_processor(BatchSpanProcessor(otlp_exporter))
+
+# Instrumentation automatique
+FastAPIInstrumentor.instrument_app(app)
+SQLAlchemyInstrumentor().instrument(engine=engine)
+
+
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 # Chargement du modèle
 model = joblib.load("app/salary_model.pkl")
 
