@@ -30,3 +30,8 @@ dependencies = [
     "sqlalchemy>=2.0.47",
     "uvicorn>=0.41.0",
 ]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.15.4",
+]
